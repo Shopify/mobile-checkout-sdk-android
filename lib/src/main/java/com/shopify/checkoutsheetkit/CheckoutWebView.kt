@@ -177,14 +177,23 @@ internal class CheckoutWebView(context: Context, attributeSet: AttributeSet? = n
         }
 
         override fun shouldOverrideUrlLoading(
-            view: WebView?,
-            request: WebResourceRequest?
+            view: WebView,
+            request: WebResourceRequest
         ): Boolean {
-            if (request?.hasExternalAnnotation() == true || request?.url?.isContactLink() == true) {
+            if (shouldOpenExternally(request)) {
                 checkoutBridge.getEventProcessor().onCheckoutViewLinkClicked(request.trimmedUri())
                 return true
             }
             return false
+        }
+
+        private fun shouldOpenExternally(request: WebResourceRequest): Boolean {
+            val patterns = ShopifyCheckoutSheetKit.configuration.urlPatternsThatTriggerOnCheckoutLinkClicked
+            if (patterns.any { request.url.toString().matches(it.toRegex()) }) {
+                return true
+            }
+
+            return request.hasExternalAnnotation() || request.url?.isContactLink() == true
         }
 
         private fun WebResourceRequest.hasExternalAnnotation(): Boolean {
